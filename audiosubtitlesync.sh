@@ -59,11 +59,16 @@ sox "$videobasename".trimmed.mp3 $videobasename.mp3 pad $initialpadding 0
 echo "$videobasename.mp3 is ready (with initial silence)"
 cp $video $videobasename.temp.mp4
 #If necessary extend video
-  if [ 1 -eq "$(echo "$lag < 0" | bc)" ]
+  if [ 1 -eq "$(echo "$lag < 0" | bc)" ]  
   then
   	lag=$( echo "scale=3;$lag * -1 "|bc )
-	echo "Extending last frame of video by $lag seconds"
-	ffmpeg -y -i $video -vf tpad=stop_mode=clone:stop_duration=$lag $videobasename.temp.mp4
+  	videoduration=$(timestamp `ffprobe $video 2>&1 | grep 'Duration'| cut -d',' -f1| cut -d' ' -f4|sed s/\\\./,/`)
+	lag=$(echo "scale=3;$lag - ($videoduration - $subtitleend)" | bc) 
+  	if [ 1 -eq "$(echo "$lag > 0" | bc)" ]
+	then
+		echo "Extending last frame of video by $lag seconds"
+		ffmpeg -y -i $video -vf tpad=stop_mode=clone:stop_duration=$lag $videobasename.temp.mp4
+  	fi
   fi
 echo "Replacing MP4 audio track with generated MP3"
 ffmpeg -i $videobasename.temp.mp4 -i $videobasename.mp3 -c:v copy -map 0:v:0 -map 1:a:0 $videobasename.audio.mp4
