@@ -21,5 +21,5 @@
 	}
 	next
     }
-!/^[0-9]*\r/ { print $0 >> FILENAME".content" }
+!/^[0-9]*\r*$/ { print $0 >> FILENAME".content" }
 END { print " --> " last >> FILENAME".timing" }
